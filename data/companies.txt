@@ -1,0 +1,8 @@
+Google,9.0,Java,Python,Algorithms,Cloud
+Microsoft,8.5,C#,C++,Java,TypeScript
+Amazon,8.0,Java,C++,Problem Solving,Distributed Systems
+TCS,7.0,Java,C,C++,SQL
+Infosys,6.5,Java,Python,Basic Programming
+Adobe,8.5,C++,Java,Graphics,UI/UX
+Meta,9.0,React,PHP,Algorithms,Web Dev
+Zomato,8.2,JavaScript,Node.js,React,NoSQL
