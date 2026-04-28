@@ -1,84 +1,109 @@
 package com.placement;
 
 import com.placement.models.Company;
+import com.placement.models.Person;
+import com.placement.models.PlacementDrive;
 import com.placement.models.Student;
 import com.placement.services.EligibilityService;
 import com.placement.services.FileService;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
-import java.util.stream.Collectors;
 
 public class Main {
-    private static final FileService fileService = new FileService();
-    private static final EligibilityService eligibilityService = new EligibilityService();
 
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("================================");
-        System.out.println(" Student Placement Eligibility ");
-        System.out.println("================================");
 
+        // Load all companies from the data file
+        FileService fileService = new FileService();
         List<Company> allCompanies = fileService.loadCompanies();
 
+        EligibilityService eligibilityService = new EligibilityService();
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("=========================================");
+        System.out.println("  Campus Placement Eligibility System");
+        System.out.println("=========================================");
+
         while (true) {
-            System.out.println("\n1. Check Eligibility");
-            System.out.println("2. Exit");
-            System.out.print("Choose an option: ");
-            String choice = scanner.nextLine();
+            System.out.println("\n  1. Check My Eligibility");
+            System.out.println("  2. View All Companies");
+            System.out.println("  3. Exit");
+            System.out.print("  Choose an option: ");
+
+            String choice = scanner.nextLine().trim();
 
             if (choice.equals("1")) {
-                checkEligibility(scanner, allCompanies);
+                checkEligibility(scanner, allCompanies, eligibilityService);
+
             } else if (choice.equals("2")) {
-                System.out.println("Exiting... Good luck with your placements!");
+                viewAllCompanies(allCompanies);
+
+            } else if (choice.equals("3")) {
+                System.out.println("\n  Goodbye! Best of luck with your placements!");
                 break;
+
             } else {
-                System.out.println("Invalid choice. Try again.");
+                System.out.println("  Invalid choice. Please enter 1, 2, or 3.");
             }
         }
+
+        scanner.close();
     }
 
-    private static void checkEligibility(Scanner scanner, List<Company> allCompanies) {
-        System.out.print("\nEnter your name: ");
-        String name = scanner.nextLine();
 
-        double cgpa = -1;
-        while (cgpa < 0 || cgpa > 10) {
-            System.out.print("Enter your CGPA (0.0 - 10.0): ");
-            try {
-                cgpa = Double.parseDouble(scanner.nextLine());
-                if (cgpa < 0 || cgpa > 10) {
-                    System.out.println("Please enter a valid CGPA between 0 and 10.");
-                }
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid input. Please enter a numeric value.");
+    // Asks the user for their details, then shows which companies they qualify for
+    private static void checkEligibility(Scanner scanner, List<Company> allCompanies,
+                                          EligibilityService eligibilityService) {
+
+        System.out.print("\n  Enter your name: ");
+        String name = scanner.nextLine().trim();
+
+        System.out.print("  Enter your CGPA (e.g. 8.5): ");
+        double cgpa = Double.parseDouble(scanner.nextLine().trim());
+
+        System.out.print("  Enter your branch (e.g. Computer Science): ");
+        String branch = scanner.nextLine().trim();
+
+        System.out.print("  Enter your skills separated by commas (e.g. Java, Python, SQL): ");
+        String[] skillsArray = scanner.nextLine().split(",");
+
+        List<String> skills = new ArrayList<>();
+        for (String skill : skillsArray) {
+            String s = skill.trim();
+            if (!s.isEmpty()) {
+                skills.add(s);
             }
         }
 
-        System.out.print("Enter your skills (comma separated, e.g., Java, Python, SQL): ");
-        String skillsInput = scanner.nextLine();
-        List<String> skills = Arrays.stream(skillsInput.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.toList());
+        Student student = new Student(name, cgpa, skills, branch);
 
-        Student student = new Student(name, cgpa, skills);
         List<Company> eligibleCompanies = eligibilityService.getEligibleCompanies(student, allCompanies);
 
-        System.out.println("\n--- Eligibility Result for " + name + " ---");
-        if (eligibleCompanies.isEmpty()) {
-            System.out.println("Sorry, you are currently not eligible for any companies based on the criteria.");
-        } else {
-            System.out.println("You are eligible for the following companies:");
-            System.out.printf("%-15s | %-8s | %-30s%n", "Company", "Min CGPA", "Required Skills");
-            System.out.println("------------------------------------------------------------");
-            for (Company company : eligibleCompanies) {
-                System.out.printf("%-15s | %-8.2f | %-30s%n",
-                        company.getName(),
-                        company.getMinCgpa(),
-                        String.join(", ", company.getRequiredSkills()));
-            }
+        eligibilityService.printReport(student, eligibleCompanies);
+    }
+
+    // Prints a table of all companies
+    private static void viewAllCompanies(List<Company> companies) {
+        System.out.println("\n  --- All Registered Companies ---");
+
+        if (companies.isEmpty()) {
+            System.out.println("  No companies found.");
+            return;
+        }
+
+        System.out.printf("  %-18s | %-8s | %-12s | %-30s%n",
+                "Company", "Min CGPA", "Sector", "Required Skills");
+        System.out.println("  " + "-".repeat(75));
+
+        for (Company c : companies) {
+            System.out.printf("  %-18s | %-8.2f | %-12s | %-30s%n",
+                    c.getName(),
+                    c.getMinCgpa(),
+                    c.getSector(),
+                    String.join(", ", c.getRequiredSkills()));
         }
     }
 }
